@@ -7,6 +7,9 @@ def main():
     env = retro.make(game='SuperMarioBros-Nes')
     obs = env.reset()
     while True:
+        action = env.action_space.sample()
+        # print(action)
+
         obs, rew, done, info = env.step(env.action_space.sample())
         env.render()
         if done:
