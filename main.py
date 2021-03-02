@@ -32,7 +32,7 @@ nb_actions = env.action_space.n
 
 
 BYTES = 2048
-INPUT_SHAPE = (2288, )
+INPUT_SHAPE = (BYTES + 540, )
 input_shape = (WINDOW_LENGTH, ) + INPUT_SHAPE
 
 class SMBProcessor(Processor):
@@ -92,11 +92,21 @@ class SMBProcessor(Processor):
         if right_x > max_x:
             right_x = max_x
 
-        viz_obs = env.get_screen()[:, left_x:right_x, :]
+        player_y = env.get_ram()[206]
 
-        viz_obs = ImageOps.grayscale(Image.fromarray(viz_obs))
+        top_y = player_y - 100
+        if env.get_ram()[181] == 0:
+            top_y = 0
 
-        viz_obs = np.asarray(viz_obs.resize((12, 20))).flatten()
+        bottom_y = player_y + 100
+        if env.get_ram()[181] > 1:
+            bottom_y = -1
+
+        viz_obs = env.get_screen()[top_y:bottom_y, left_x:right_x, :]
+
+        viz_obs = Image.fromarray(viz_obs)
+
+        viz_obs = np.asarray(viz_obs.resize((12, 15))).flatten()
 
         new_obs = np.concatenate((processed_observation, viz_obs))
 
@@ -111,7 +121,7 @@ class SMBProcessor(Processor):
         return processed_batch
 
     def process_reward(self, reward):
-        return np.clip(reward, -1., 1.) - 1/60 # for the frame
+        return np.clip(reward, 0, 1.) - 1/60 # for the frame
 
 processor = SMBProcessor()
 
@@ -143,9 +153,9 @@ dqn = DQNAgent(model=model, nb_actions=nb_actions, policy=policy,
 
 dqn.compile(Adam(lr=.00025), metrics=['mae'])
 
-weights_filename = 'dqn_smb1_ram+viz1.h5f'
+# weights_filename = 'dqn_smb1_ram+viz1.h5f'
 if args.mode == 'train':
-    checkpoint_weights_filename = 'checkpoint_weights/ram+viz/dqn_smb1_ram+viz_{step}.h5f'
+    checkpoint_weights_filename = 'checkpoint_weights/ram+color_viz/dqn_smb1_ram+color_viz_{step}.h5f'
     log_filename = 'dqn_smb1_log.json'
     callbacks = [
         ModelIntervalCheckpoint(checkpoint_weights_filename, interval=500000),
@@ -154,13 +164,13 @@ if args.mode == 'train':
     ]
 
     # check_weights_file = tf.train.latest_checkpoint('checkpoint_weights')
-    check_weights_file = weights_filename
-    if check_weights_file:
-        dqn.load_weights(check_weights_file)
+    # check_weights_file = weights_filename
+    # if check_weights_file:
+    # dqn.load_weights(check_weights_file)
 
     # for _ in range(3):
     dqn.fit(env, callbacks=callbacks, nb_steps=2000000, log_interval=10000, visualize=False)
-    dqn.save_weights('dqn_smb1_ram+viz1.h5f', overwrite=True)
+    dqn.save_weights('dqn_smb1_ram+color_viz.h5f', overwrite=True)
     dqn.test(env, nb_episodes=10, visualize=True)
 
 elif args.mode == 'test':
