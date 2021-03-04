@@ -67,6 +67,8 @@ class MarioEnv(RetroEnv):
         done = self.data.is_done()
         info = self.data.lookup_all()
 
+        reward = np.clip(reward, 0, 1)
+
         reward -= 1/60 # subtract the frame
 
         if reward <= 0 and self.ram[941] == self.last_loc:
@@ -79,7 +81,7 @@ class MarioEnv(RetroEnv):
             done = True
             self.frame_count = 0
             self.last_loc = DEFAULT_LOC
-            reward = -1
+            reward = -1000
         elif self.ram[1904] == 2:
             done = True
             self.frame_count = 0

@@ -3,41 +3,42 @@ import argparse
 import numpy as np
 import retro
 from env import MarioEnv
-from stable_baselines.common.policies import MlpLstmPolicy
-from stable_baselines import PPO2
-from stable_baselines.common import make_vec_env
-from stable_baselines.common.callbacks import CheckpointCallback
+from stable_baselines3.ppo import MlpPolicy
+from stable_baselines3 import PPO
+from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.callbacks import CheckpointCallback
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['train', 'test'], default='train')
 args = parser.parse_args()
 
 env = make_vec_env(MarioEnv, n_envs=1, env_kwargs={'game': 'SuperMarioBros-Nes', 
-                'use_restricted_actions': retro.Actions.ALL, 'obs_type': retro.Observations.RAM, 'state': None})
+                'use_restricted_actions': retro.Actions.FILTERED, 'obs_type': retro.Observations.RAM})
 nb_actions = env.action_space.n
 
-policy = MlpLstmPolicy
+policy = MlpPolicy
 
-model = PPO2(policy, env, verbose=1, nminibatches=1)
+model = PPO(policy, env, verbose=1)
 
-weights_filename = 'ppo2-firstpass'
+# old_weights_filename = 'ppo-torch-mbool-1'
+new_weights_filename = 'ppo-torch-mbool-new_rew'
 if args.mode == 'train':
     callbacks = [
-        CheckpointCallback(500000, save_path='./checkpoint_weights/ppo2-firstpass/', name_prefix='ppo2-firstpass'),
+        CheckpointCallback(500000, save_path=f'./checkpoint_weights/{new_weights_filename}/', name_prefix=new_weights_filename),
     ]
 
-    model.load(weights_filename)
-    model.learn(2000000, callback=callbacks, log_interval=1000, tb_log_name="ppo2-firstpass")    
-    model.save('ppo2-firstpass')
+    # model = PPO.load(old_weights_filename, env=env)
+    model.learn(1000000, callback=callbacks, log_interval=1, tb_log_name=new_weights_filename)    
+    model.save(new_weights_filename)
 
 
 elif args.mode == 'test':
-    model.load(weights_filename)
+    model = PPO.load(old_weights_filename, env=env)
 
-    # # dqn.test(env, nb_episodes=10, visualize=True)
     obs = env.reset()
     while True:
         action, _states = model.predict(obs)
+        print(action)
         obs, rewards, dones, info = env.step(action)
         env.render()
 
