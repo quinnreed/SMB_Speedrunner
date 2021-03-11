@@ -18,7 +18,9 @@ nb_actions = env.action_space.n
 
 policy = MlpPolicy
 
-model = PPO(policy, env, verbose=1)
+model = PPO(policy, env, 
+            learning_rate=2.5e-4, n_steps=128, batch_size=32, n_epochs=3, clip_range=0.1, ent_coef=.01, vf_coef=1, 
+            verbose=1)
 
 # old_weights_filename = 'ppo-torch-mbool-1'
 new_weights_filename = 'ppo-torch-mbool-new_rew'
@@ -27,8 +29,8 @@ if args.mode == 'train':
         CheckpointCallback(500000, save_path=f'./checkpoint_weights/{new_weights_filename}/', name_prefix=new_weights_filename),
     ]
 
-    # model = PPO.load(old_weights_filename, env=env)
-    model.learn(1000000, callback=callbacks, log_interval=1, tb_log_name=new_weights_filename)    
+    model = PPO.load(old_weights_filename, env=env)
+    model.learn(1000000, callback=callbacks, log_interval=5, tb_log_name=new_weights_filename)    
     model.save(new_weights_filename)
 
 
@@ -38,8 +40,10 @@ elif args.mode == 'test':
     obs = env.reset()
     while True:
         action, _states = model.predict(obs)
-        print(action)
+        # print(action)
         obs, rewards, dones, info = env.step(action)
+
+        print(rewards)
         env.render()
 
     # movie = retro.Movie('SuperMarioBros-Nes-Level1-1-000000.bk2')
