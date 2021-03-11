@@ -1,0 +1,20 @@
+
+18
+00000	0400	b	u	0	X subpixel
+00001	03AD	b	u	0	On Screen X
+00002	071D	b	u	0	Camera X
+00003	0086	b	u	0	player x position screen
+00004	0705	b	u	0	X Speed Sub
+00005	00CE	b	u	0	Y Pixel
+00006	0416	b	u	0	Y subpixel
+00007	00B5	b	u	0	Viewport Position
+00008	03B8	b	s	0	Y position on screen
+00009	0770	b	u	0	Gamemode
+0000A	000E	b	u	0	players state
+0000B	071A	b	u	0	Current Screen
+0000C	071B	b	u	0	Next Screen
+0000D	071C	b	u	0	ScreenEdge x
+0000E	00E7	w	h	0	Level address
+0000F	072C	w	h	0	Level Index
+00010	0005	b	u	0	
+00011	006D	b	u	0	Horizontal position in Level
