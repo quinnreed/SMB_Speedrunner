@@ -22,8 +22,8 @@ model = PPO(policy, env,
             learning_rate=2.5e-4, n_steps=128, batch_size=32, n_epochs=3, clip_range=0.1, ent_coef=.01, vf_coef=1, 
             verbose=1)
 
-# old_weights_filename = 'ppo-torch-mbool-1'
-new_weights_filename = 'ppo-torch-mbool-new_rew'
+old_weights_filename = 'ppo-torch-mbool-xstep1-deathon'
+new_weights_filename = 'ppo-torch-mbool-xstep1-deathon'
 if args.mode == 'train':
     callbacks = [
         CheckpointCallback(500000, save_path=f'./checkpoint_weights/{new_weights_filename}/', name_prefix=new_weights_filename),

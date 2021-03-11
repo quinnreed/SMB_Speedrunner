@@ -14,7 +14,8 @@ class MarioEnv(RetroEnv):
         self.observation_space = gym.spaces.Box(low=0, high=255, shape=SHAPE, dtype=np.uint8)
 
         self.frame_count = 0
-        self.last_loc = DEFAULT_LOC
+        # self.last_loc = {'0xA690': DEFAULT_LOC}
+        self.last_loc = {}
 
     def _update_obs(self):
         """
@@ -64,28 +65,40 @@ class MarioEnv(RetroEnv):
             reward = [self.data.current_reward(p) for p in range(self.players)]
         else:
             reward = self.data.current_reward()
+        
         done = self.data.is_done()
         info = self.data.lookup_all()
 
-        reward = np.clip(reward, 0, 1)
+        level_addr = hex(np.array(self.ram[231:233]).view('<u2')[0])
+
+        # print(level_addr)
+
+        reward = new_loc = self.ram[109] * 256 + self.ram[134] ## Ram x6D * 256 + x86. This is x position in level including the screen
+
+        if level_addr in self.last_loc:
+            reward -= self.last_loc[level_addr]
+
+        self.last_loc[level_addr] = new_loc
+
+        # reward = np.clip(reward, 0, 1)
 
         reward -= 1/60 # subtract the frame
 
-        if reward <= 0 and self.ram[941] == self.last_loc:
-            self.frame_count += 1
+        if reward <= 0 and self.ram[14] == 0x08: #and self.ram[941] == self.last_loc[level_addr]:
+                self.frame_count += 1
         else:
-            self.last_loc = self.ram[941]
+            # self.last_loc = self.ram[941]
             self.frame_count = 0
 
         if (self.frame_count >= 600 or info['lives'] <= 1) and self.ram[1904] != 2:
             done = True
             self.frame_count = 0
-            self.last_loc = DEFAULT_LOC
-            reward = -1000
-        elif self.ram[1904] == 2:
+            # self.last_loc = DEFAULT_LOC
+            reward = -10000
+        elif info['levelLo'] > 1:
             done = True
             self.frame_count = 0
-            self.last_loc = DEFAULT_LOC
-            reward = 1000
+            # self.last_loc = DEFAULT_LOC
+            reward = 10000
 
         return reward, done, info
