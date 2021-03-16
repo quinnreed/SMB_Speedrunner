@@ -2,6 +2,8 @@ import numpy as np
 from PIL import Image
 import gym
 from retro import RetroEnv
+import logging
+import datetime as dt
 
 NES_BYTES = 2048
 DEFAULT_LOC = 40
@@ -16,6 +18,8 @@ class MarioEnv(RetroEnv):
         self.frame_count = 0
         # self.last_loc = {'0xA690': DEFAULT_LOC}
         self.last_loc = {}
+        self.current_level = 0 # 0 = '1'
+        self.current_world = 0 # 0 = '1'
 
     def _update_obs(self):
         """
@@ -77,15 +81,20 @@ class MarioEnv(RetroEnv):
 
         if level_addr in self.last_loc:
             reward -= self.last_loc[level_addr]
+        else:
+            reward = 0
 
-        self.last_loc[level_addr] = new_loc
+        if self.ram[14] != 0x00:
+            self.last_loc[level_addr] = new_loc
+        else:
+            reward = 0
 
         # reward = np.clip(reward, 0, 1)
 
         reward -= 1/60 # subtract the frame
 
         if reward <= 0 and self.ram[14] == 0x08: #and self.ram[941] == self.last_loc[level_addr]:
-                self.frame_count += 1
+            self.frame_count += 1
         else:
             # self.last_loc = self.ram[941]
             self.frame_count = 0
@@ -93,12 +102,15 @@ class MarioEnv(RetroEnv):
         if (self.frame_count >= 600 or info['lives'] <= 1) and self.ram[1904] != 2:
             done = True
             self.frame_count = 0
-            # self.last_loc = DEFAULT_LOC
+            self.last_loc = {}
             reward = -10000
-        elif info['levelLo'] > 1:
+        elif info['levelLo'] != self.current_level:
+            logging.INFO(f"IT WON {self.current_world}-{self.current_level}, {dt.datetime.now()}", filename='env.log')
+            self.current_level = info['levelLo']
+            self.current_world = info['levelHi']
             done = True
             self.frame_count = 0
-            # self.last_loc = DEFAULT_LOC
+            self.last_loc = {}
             reward = 10000
 
         return reward, done, info

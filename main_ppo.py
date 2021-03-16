@@ -30,18 +30,23 @@ if args.mode == 'train':
     ]
 
     model = PPO.load(old_weights_filename, env=env)
-    model.learn(1000000, callback=callbacks, log_interval=5, tb_log_name=new_weights_filename)    
+    model.learn(10000000, callback=callbacks, log_interval=5, tb_log_name=new_weights_filename)    
     model.save(new_weights_filename)
 
 
 elif args.mode == 'test':
+    import logging
+
     model = PPO.load(old_weights_filename, env=env)
 
     obs = env.reset()
     while True:
         action, _states = model.predict(obs)
         # print(action)
+
         obs, rewards, dones, info = env.step(action)
+
+        logging.info(f'action: {action}, reward: {rewards}', filename='test.log')
 
         print(rewards)
         env.render()
