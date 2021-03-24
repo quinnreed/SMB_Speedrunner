@@ -20,38 +20,46 @@ policy = MlpPolicy
 
 model = PPO(policy, env, 
             learning_rate=2.5e-4, n_steps=128, batch_size=32, n_epochs=3, clip_range=0.1, ent_coef=.01, vf_coef=1, 
+            #policy_kwargs={'net_arch': [128, 64, 32]},
             verbose=1)
 
-old_weights_filename = 'ppo-torch-mbool-xstep1-deathon'
-new_weights_filename = 'ppo-torch-mbool-xstep1-deathon'
+old_weights_filename = 'ppo-torch-mbool-xstep1-death-perframe+pixdiff-newarch'
+new_weights_filename = 'ppo-torch-mbool-xstep1-death-perframe+pixdiff-newarch'
 if args.mode == 'train':
     callbacks = [
         CheckpointCallback(500000, save_path=f'./checkpoint_weights/{new_weights_filename}/', name_prefix=new_weights_filename),
     ]
 
-    model = PPO.load(old_weights_filename, env=env)
+    # model = PPO.load(old_weights_filename, env=env)
     model.learn(10000000, callback=callbacks, log_interval=5, tb_log_name=new_weights_filename)    
-    model.save(new_weights_filename)
-
+    model.save(new_weights_filename)    
 
 elif args.mode == 'test':
     import logging
 
-    model = PPO.load(old_weights_filename, env=env)
+    model = PPO.load(old_weights_filename) #, env=env)
 
     obs = env.reset()
+
+    testlog = logging.getLogger('testing')
+    testlog.setLevel(logging.DEBUG)
+    fh = logging.FileHandler('./test.log')
+    testlog.addHandler(fh) 
+    ch = logging.StreamHandler()
+    testlog.addHandler(ch)
+
     while True:
         action, _states = model.predict(obs)
         # print(action)
 
         obs, rewards, dones, info = env.step(action)
 
-        logging.info(f'action: {action}, reward: {rewards}', filename='test.log')
+        testlog.info(f'action: {action}, reward: {rewards}')
 
-        print(rewards)
+        # print(rewards)
         env.render()
 
-    # movie = retro.Movie('SuperMarioBros-Nes-Level1-1-000000.bk2')
+    # movie = retro.Movie('Super Mario Bros.bk2')
     # movie.step()
 
     # env = retro.make(
