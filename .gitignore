@@ -136,3 +136,6 @@ checkpoint_weights
 
 # VS Code
 .vscode
+
+# trained networks
+*.zip
